@@ -22,7 +22,11 @@
 
         <label>
           Time (24h)
-          <select id="time"></select>
+          <div class="time-picker" id="timePicker">
+            <input id="time" type="hidden" />
+            <button type="button" class="time-toggle" id="timeToggle" aria-haspopup="listbox" aria-expanded="false">Select time</button>
+            <ul class="time-menu" id="timeMenu" role="listbox" hidden></ul>
+          </div>
         </label>
 
         <label>
@@ -100,17 +104,48 @@
       URL.revokeObjectURL(url);
     }
 
+    function closeTimeMenu() {
+      timeMenuEl.hidden = true;
+      timeToggleEl.setAttribute("aria-expanded", "false");
+    }
+
+    function openTimeMenu() {
+      timeMenuEl.hidden = false;
+      timeToggleEl.setAttribute("aria-expanded", "true");
+
+      const activeEl = timeMenuEl.querySelector(".time-option.is-active");
+      if (activeEl) activeEl.scrollIntoView({ block: "nearest" });
+    }
+
+    function setTimeValue(timeStr) {
+      timeEl.value = timeStr;
+      timeToggleEl.textContent = timeStr;
+
+      for (const optionEl of timeMenuEl.querySelectorAll(".time-option")) {
+        optionEl.classList.toggle("is-active", optionEl.dataset.value === timeStr);
+      }
+    }
+
     function populateTimeOptions(stepMinutes = TIME_STEP_MINUTES) {
-      const timeSelect = document.getElementById("time");
-      timeSelect.innerHTML = "";
+      timeMenuEl.innerHTML = "";
 
       for (let total = 0; total < 24 * 60; total += stepMinutes) {
         const HH = pad2(Math.floor(total / 60));
         const MM = pad2(total % 60);
-        const option = document.createElement("option");
-        option.value = `${HH}:${MM}`;
-        option.textContent = `${HH}:${MM}`;
-        timeSelect.appendChild(option);
+        const value = `${HH}:${MM}`;
+        const listItem = document.createElement("li");
+        const optionButton = document.createElement("button");
+        optionButton.type = "button";
+        optionButton.className = "time-option";
+        optionButton.dataset.value = value;
+        optionButton.setAttribute("role", "option");
+        optionButton.textContent = value;
+        optionButton.addEventListener("click", () => {
+          setTimeValue(value);
+          closeTimeMenu();
+        });
+        listItem.appendChild(optionButton);
+        timeMenuEl.appendChild(listItem);
       }
     }
 
@@ -132,12 +167,15 @@
       const MM = pad2(rounded.getMinutes());
 
       document.getElementById("date").value = `${yyyy}-${mm}-${dd}`;
-      document.getElementById("time").value = `${HH}:${MM}`;
+      setTimeValue(`${HH}:${MM}`);
     }
 
     // ---- main ----
     const dateEl = document.getElementById("date");
     const timeEl = document.getElementById("time");
+    const timePickerEl = document.getElementById("timePicker");
+    const timeToggleEl = document.getElementById("timeToggle");
+    const timeMenuEl = document.getElementById("timeMenu");
     const durationEl = document.getElementById("duration");
     const statusEl = document.getElementById("status");
     const resultEl = document.getElementById("result");
@@ -177,6 +215,22 @@
     }
 
     document.getElementById("generate").addEventListener("click", generate);
+
+    timeToggleEl.addEventListener("click", () => {
+      if (timeMenuEl.hidden) {
+        openTimeMenu();
+      } else {
+        closeTimeMenu();
+      }
+    });
+
+    document.addEventListener("click", (event) => {
+      if (!timePickerEl.contains(event.target)) closeTimeMenu();
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") closeTimeMenu();
+    });
 
     document.getElementById("copy").addEventListener("click", async () => {
       if (!last) return;
