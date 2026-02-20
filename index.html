@@ -84,10 +84,6 @@
       return `${dd}${mm}${yyyy}`;
     }
 
-    function toISODate(dateObj) {
-      return `${dateObj.getFullYear()}-${pad2(dateObj.getMonth() + 1)}-${pad2(dateObj.getDate())}`;
-    }
-
     function formatDisplayDate(dateObj) {
       return dateObj.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric", year: "numeric" });
     }
@@ -305,26 +301,32 @@
 
     document.getElementById("generate").addEventListener("click", generate);
 
-    dateToggleEl.addEventListener("click", () => {
+    dateToggleEl.addEventListener("click", (event) => {
+      event.stopPropagation();
       if (dateMenuEl.hidden) {
+        closeTimeMenu();
         openDateMenu();
       } else {
         closeDateMenu();
       }
     });
 
-    datePrevEl.addEventListener("click", () => {
+    datePrevEl.addEventListener("click", (event) => {
+      event.stopPropagation();
       displayedMonth = new Date(displayedMonth.getFullYear(), displayedMonth.getMonth() - 1, 1);
       renderDateMenu();
     });
 
-    dateNextEl.addEventListener("click", () => {
+    dateNextEl.addEventListener("click", (event) => {
+      event.stopPropagation();
       displayedMonth = new Date(displayedMonth.getFullYear(), displayedMonth.getMonth() + 1, 1);
       renderDateMenu();
     });
 
-    timeToggleEl.addEventListener("click", () => {
+    timeToggleEl.addEventListener("click", (event) => {
+      event.stopPropagation();
       if (timeMenuEl.hidden) {
+        closeDateMenu();
         openTimeMenu();
       } else {
         closeTimeMenu();
@@ -332,8 +334,10 @@
     });
 
     document.addEventListener("click", (event) => {
-      if (!timePickerEl.contains(event.target)) closeTimeMenu();
-      if (!datePickerEl.contains(event.target)) closeDateMenu();
+      const target = event.target;
+      if (!(target instanceof Node)) return;
+      if (!timePickerEl.contains(target)) closeTimeMenu();
+      if (!datePickerEl.contains(target)) closeDateMenu();
     });
 
     document.addEventListener("keydown", (event) => {
