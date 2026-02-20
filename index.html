@@ -17,7 +17,19 @@
       <div class="row">
         <label>
           Date
-          <input id="date" type="date" />
+          <div class="date-picker" id="datePicker">
+            <input id="date" type="hidden" />
+            <button type="button" class="date-toggle" id="dateToggle" aria-haspopup="dialog" aria-expanded="false">Select date</button>
+            <div class="date-menu" id="dateMenu" hidden>
+              <div class="date-header">
+                <button type="button" class="date-nav" id="datePrev" aria-label="Previous month">&lt;</button>
+                <div class="date-title" id="dateTitle"></div>
+                <button type="button" class="date-nav" id="dateNext" aria-label="Next month">&gt;</button>
+              </div>
+              <div class="date-weekdays" id="dateWeekdays"></div>
+              <div class="date-grid" id="dateGrid"></div>
+            </div>
+          </div>
         </label>
 
         <label>
@@ -62,12 +74,22 @@
     // ---- helpers ----
     const pad2 = (n) => String(n).padStart(2, "0");
     const TIME_STEP_MINUTES = 15;
+    const WEEKDAY_LABELS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
+    const MONTH_FORMATTER = new Intl.DateTimeFormat(undefined, { month: "long", year: "numeric" });
 
     function formatDDMMYYYY(dateObj) {
       const dd = pad2(dateObj.getDate());
       const mm = pad2(dateObj.getMonth() + 1);
       const yyyy = dateObj.getFullYear();
       return `${dd}${mm}${yyyy}`;
+    }
+
+    function toISODate(dateObj) {
+      return `${dateObj.getFullYear()}-${pad2(dateObj.getMonth() + 1)}-${pad2(dateObj.getDate())}`;
+    }
+
+    function formatDisplayDate(dateObj) {
+      return dateObj.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric", year: "numeric" });
     }
 
     function buildMeetingId(dateStr, timeStr) {
