@@ -126,6 +126,64 @@
       URL.revokeObjectURL(url);
     }
 
+    function openDateMenu() {
+      dateMenuEl.hidden = false;
+      dateToggleEl.setAttribute("aria-expanded", "true");
+    }
+
+    function closeDateMenu() {
+      dateMenuEl.hidden = true;
+      dateToggleEl.setAttribute("aria-expanded", "false");
+    }
+
+    function setDateValue(dateStr) {
+      dateEl.value = dateStr;
+      const [year, month, day] = dateStr.split("-").map(Number);
+      const selected = new Date(year, month - 1, day);
+      displayedMonth = new Date(year, month - 1, 1);
+      dateToggleEl.textContent = formatDisplayDate(selected);
+      renderDateMenu();
+    }
+
+    function renderDateMenu() {
+      dateTitleEl.textContent = MONTH_FORMATTER.format(displayedMonth);
+      dateWeekdaysEl.innerHTML = "";
+      dateGridEl.innerHTML = "";
+
+      for (const label of WEEKDAY_LABELS) {
+        const el = document.createElement("div");
+        el.textContent = label;
+        dateWeekdaysEl.appendChild(el);
+      }
+
+      const startWeekday = new Date(displayedMonth.getFullYear(), displayedMonth.getMonth(), 1).getDay();
+      const daysInMonth = new Date(displayedMonth.getFullYear(), displayedMonth.getMonth() + 1, 0).getDate();
+      const [selYear, selMonth, selDay] = dateEl.value ? dateEl.value.split("-").map(Number) : [null, null, null];
+
+      for (let i = 0; i < startWeekday; i += 1) {
+        const spacer = document.createElement("div");
+        spacer.className = "date-empty";
+        dateGridEl.appendChild(spacer);
+      }
+
+      for (let day = 1; day <= daysInMonth; day += 1) {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "date-day";
+        btn.textContent = String(day);
+        const iso = `${displayedMonth.getFullYear()}-${pad2(displayedMonth.getMonth() + 1)}-${pad2(day)}`;
+        btn.dataset.value = iso;
+        if (selYear === displayedMonth.getFullYear() && selMonth === (displayedMonth.getMonth() + 1) && selDay === day) {
+          btn.classList.add("is-active");
+        }
+        btn.addEventListener("click", () => {
+          setDateValue(iso);
+          closeDateMenu();
+        });
+        dateGridEl.appendChild(btn);
+      }
+    }
+
     function closeTimeMenu() {
       timeMenuEl.hidden = true;
       timeToggleEl.setAttribute("aria-expanded", "false");
@@ -188,12 +246,20 @@
       const HH = pad2(rounded.getHours());
       const MM = pad2(rounded.getMinutes());
 
-      document.getElementById("date").value = `${yyyy}-${mm}-${dd}`;
+      setDateValue(`${yyyy}-${mm}-${dd}`);
       setTimeValue(`${HH}:${MM}`);
     }
 
     // ---- main ----
     const dateEl = document.getElementById("date");
+    const datePickerEl = document.getElementById("datePicker");
+    const dateToggleEl = document.getElementById("dateToggle");
+    const dateMenuEl = document.getElementById("dateMenu");
+    const datePrevEl = document.getElementById("datePrev");
+    const dateNextEl = document.getElementById("dateNext");
+    const dateTitleEl = document.getElementById("dateTitle");
+    const dateWeekdaysEl = document.getElementById("dateWeekdays");
+    const dateGridEl = document.getElementById("dateGrid");
     const timeEl = document.getElementById("time");
     const timePickerEl = document.getElementById("timePicker");
     const timeToggleEl = document.getElementById("timeToggle");
@@ -203,6 +269,7 @@
     const resultEl = document.getElementById("result");
     const meetingIdEl = document.getElementById("meetingId");
     const meetingLinkEl = document.getElementById("meetingLink");
+    let displayedMonth = new Date();
 
     let last = null; // store last generated data
 
@@ -238,6 +305,24 @@
 
     document.getElementById("generate").addEventListener("click", generate);
 
+    dateToggleEl.addEventListener("click", () => {
+      if (dateMenuEl.hidden) {
+        openDateMenu();
+      } else {
+        closeDateMenu();
+      }
+    });
+
+    datePrevEl.addEventListener("click", () => {
+      displayedMonth = new Date(displayedMonth.getFullYear(), displayedMonth.getMonth() - 1, 1);
+      renderDateMenu();
+    });
+
+    dateNextEl.addEventListener("click", () => {
+      displayedMonth = new Date(displayedMonth.getFullYear(), displayedMonth.getMonth() + 1, 1);
+      renderDateMenu();
+    });
+
     timeToggleEl.addEventListener("click", () => {
       if (timeMenuEl.hidden) {
         openTimeMenu();
@@ -248,10 +333,14 @@
 
     document.addEventListener("click", (event) => {
       if (!timePickerEl.contains(event.target)) closeTimeMenu();
+      if (!datePickerEl.contains(event.target)) closeDateMenu();
     });
 
     document.addEventListener("keydown", (event) => {
-      if (event.key === "Escape") closeTimeMenu();
+      if (event.key === "Escape") {
+        closeTimeMenu();
+        closeDateMenu();
+      }
     });
 
     document.getElementById("copy").addEventListener("click", async () => {
