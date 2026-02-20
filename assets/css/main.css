@@ -1,0 +1,167 @@
+:root {
+  --card-bg: #fff;
+  --border: #ede6e0;
+  --text: #393635;
+  --muted: #5c5654;
+  --shadow: 0 20px 50px rgba(0, 0, 0, 0.14);
+  --radius: 18px;
+  --bg: #ede6e0;
+  --ok: #1d7d2f;
+  --warn: #a35b00;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: "Poppins", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+  font-weight: 300;
+  color: var(--text);
+  background-color: var(--bg);
+}
+
+.wrap {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 40px 16px;
+}
+
+h1 {
+  margin: 0 0 8px;
+  font-size: 30px;
+  font-weight: 500;
+  letter-spacing: 0.2px;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.card {
+  margin-top: 16px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 22px;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  align-items: end;
+}
+
+label {
+  display: grid;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text);
+}
+
+input,
+select,
+button {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px;
+  min-height: 44px;
+  font-size: 15px;
+  color: var(--text);
+  background: #fff;
+  font-family: inherit;
+}
+
+input:focus,
+select:focus,
+button:focus {
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(237, 230, 224, 0.55);
+}
+
+button {
+  border: 0;
+  cursor: pointer;
+  font-weight: 500;
+  color: #fff;
+  background: #111;
+}
+
+button:hover {
+  filter: brightness(0.95);
+}
+
+button:active {
+  transform: translateY(1px);
+}
+
+button.primary {
+  background: #111;
+}
+
+.actions button {
+  background: #f6f1ed;
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+code {
+  background: #f6f1ed;
+  color: var(--text);
+  padding: 3px 6px;
+  border-radius: 6px;
+}
+
+.status {
+  margin-top: 10px;
+}
+
+.output {
+  margin-top: 16px;
+  border-top: 1px dashed var(--border);
+  padding-top: 16px;
+  overflow-wrap: anywhere;
+}
+
+.result-link {
+  margin-top: 6px;
+}
+
+#meetingLink {
+  color: var(--text);
+}
+
+.actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.ok {
+  color: var(--ok);
+  font-weight: 500;
+}
+
+.warn {
+  color: var(--warn);
+  font-weight: 500;
+}
+
+@media (max-width: 640px) {
+  .wrap {
+    padding: 24px 14px;
+  }
+
+  h1 {
+    font-size: 24px;
+  }
+}
