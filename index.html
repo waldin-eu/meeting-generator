@@ -10,7 +10,7 @@
   <main class="wrap">
     <h1>Waldin Jitsi link generator</h1>
     <p class="muted">
-      Generates a <code>meet.jit.si</code> room named <code>waldinDDMMYYYYHH:MM</code> (24h).
+      Generates a <code>meet.jit.si</code> room named <code>waldinDDMMYYYYHHMM</code> (24h).
     </p>
 
     <div class="card">
@@ -96,7 +96,7 @@
       // Construct local date (user timezone)
       const d = new Date(yyyy, mm - 1, dd, HH, MM, 0, 0);
       const ddmmyyyy = formatDDMMYYYY(d);
-      return `waldin${ddmmyyyy}${pad2(HH)}:${pad2(MM)}`;
+      return `waldin${ddmmyyyy}${pad2(HH)}${pad2(MM)}`;
     }
 
     function toICSDateUTC(dateObj) {
