@@ -334,6 +334,52 @@ code {
   margin-top: 10px;
 }
 
+.bookings-panel {
+  margin-top: 14px;
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.65);
+}
+
+.bookings-header {
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+
+.bookings-list {
+  display: grid;
+  gap: 8px;
+}
+
+.booking-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px 10px;
+  background: #fff;
+}
+
+.booking-text {
+  font-size: 13px;
+}
+
+.booking-remove {
+  width: auto;
+  height: 30px;
+  min-height: 30px;
+  padding: 0 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: #f6f1ed;
+  color: var(--text);
+  font-size: 12px;
+  line-height: 28px;
+}
+
 .output {
   margin-top: 16px;
   border-top: 1px dashed var(--border);

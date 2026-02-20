@@ -57,6 +57,13 @@
 
       <div id="status" class="muted status"></div>
 
+      <div class="bookings-panel">
+        <div class="bookings-header">
+          <strong>Requested time slots</strong>
+        </div>
+        <div id="bookingsList" class="bookings-list muted">No slots requested yet.</div>
+      </div>
+
       <div id="result" class="output" style="display:none;">
         <div><strong>Meeting ID:</strong> <span id="meetingId"></span></div>
         <div class="result-link"><strong>Link:</strong> <a id="meetingLink" href="#" target="_blank" rel="noopener"></a></div>
@@ -86,6 +93,12 @@
 
     function formatDisplayDate(dateObj) {
       return dateObj.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+    }
+
+    function minutesToTime(totalMinutes) {
+      const hours = Math.floor(totalMinutes / 60);
+      const minutes = totalMinutes % 60;
+      return `${pad2(hours)}:${pad2(minutes)}`;
     }
 
     function buildMeetingId(dateStr, timeStr) {
@@ -225,6 +238,70 @@
       }
     }
 
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll("\"", "&quot;")
+        .replaceAll("'", "&#39;");
+    }
+
+    function renderBookings(bookings) {
+      if (!bookings.length) {
+        bookingsListEl.innerHTML = "No slots requested yet.";
+        return;
+      }
+
+      bookingsListEl.innerHTML = bookings.map((booking) => {
+        const start = booking.time || minutesToTime(booking.startMinutes);
+        const end = minutesToTime(booking.endMinutes);
+        return `
+          <div class="booking-item">
+            <div class="booking-text">${escapeHtml(booking.date)} ${escapeHtml(start)}-${escapeHtml(end)} (${escapeHtml(String(booking.duration))}m)</div>
+            <button type="button" class="booking-remove" data-booking-id="${escapeHtml(booking.id)}">Remove</button>
+          </div>
+        `;
+      }).join("");
+    }
+
+    async function fetchBookings() {
+      const response = await fetch("/api/bookings");
+      if (!response.ok) throw new Error("Could not load bookings.");
+      const payload = await response.json();
+      renderBookings(payload.bookings || []);
+    }
+
+    async function reserveSlot(date, time, duration) {
+      const response = await fetch("/api/bookings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ date, time, duration }),
+      });
+
+      const payload = await response.json().catch(() => ({}));
+
+      if (response.status === 409) {
+        const conflict = payload.conflict;
+        const conflictStart = conflict?.time || minutesToTime(conflict?.startMinutes ?? 0);
+        const conflictEnd = minutesToTime(conflict?.endMinutes ?? 0);
+        throw new Error(`That slot overlaps with ${conflict?.date ?? date} ${conflictStart}-${conflictEnd}.`);
+      }
+
+      if (!response.ok) {
+        throw new Error(payload.error || "Could not reserve the selected slot.");
+      }
+
+      return payload.booking;
+    }
+
+    async function removeSlot(bookingId) {
+      const response = await fetch(`/api/bookings/${encodeURIComponent(bookingId)}`, {
+        method: "DELETE",
+      });
+      if (!response.ok) throw new Error("Could not remove slot.");
+    }
+
     function setDefaultNowPlus(minutesAhead = 30) {
       const now = new Date();
       const rounded = new Date(now.getTime());
@@ -262,6 +339,7 @@
     const timeMenuEl = document.getElementById("timeMenu");
     const durationEl = document.getElementById("duration");
     const statusEl = document.getElementById("status");
+    const bookingsListEl = document.getElementById("bookingsList");
     const resultEl = document.getElementById("result");
     const meetingIdEl = document.getElementById("meetingId");
     const meetingLinkEl = document.getElementById("meetingLink");
@@ -269,12 +347,22 @@
 
     let last = null; // store last generated data
 
-    function generate() {
+    async function generate() {
       const dateStr = dateEl.value;
       const timeStr = timeEl.value;
 
       if (!dateStr || !timeStr) {
         statusEl.innerHTML = `<span class="warn">Pick a date and time first.</span>`;
+        resultEl.style.display = "none";
+        return;
+      }
+
+      const durationMinutes = parseInt(durationEl.value, 10);
+
+      try {
+        await reserveSlot(dateStr, timeStr, durationMinutes);
+      } catch (error) {
+        statusEl.innerHTML = `<span class="warn">${escapeHtml(error.message)}</span>`;
         resultEl.style.display = "none";
         return;
       }
@@ -286,7 +374,6 @@
       const [yyyy, mm, dd] = dateStr.split("-").map(Number);
       const [HH, MM] = timeStr.split(":").map(Number);
       const startLocal = new Date(yyyy, mm - 1, dd, HH, MM, 0, 0);
-      const durationMinutes = parseInt(durationEl.value, 10);
       const endLocal = new Date(startLocal.getTime() + durationMinutes * 60000);
 
       last = { meetingId, url, startLocal, endLocal, durationMinutes };
@@ -295,8 +382,9 @@
       meetingLinkEl.textContent = url;
       meetingLinkEl.href = url;
 
-      statusEl.innerHTML = `<span class="ok">Ready.</span>`;
+      statusEl.innerHTML = `<span class="ok">Slot reserved and ready.</span>`;
       resultEl.style.display = "block";
+      await fetchBookings();
     }
 
     document.getElementById("generate").addEventListener("click", generate);
@@ -344,6 +432,21 @@
       if (event.key === "Escape") {
         closeTimeMenu();
         closeDateMenu();
+      }
+    });
+
+    bookingsListEl.addEventListener("click", async (event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLElement)) return;
+      const bookingId = target.getAttribute("data-booking-id");
+      if (!bookingId) return;
+
+      try {
+        await removeSlot(bookingId);
+        statusEl.innerHTML = `<span class="ok">Slot removed.</span>`;
+        await fetchBookings();
+      } catch (error) {
+        statusEl.innerHTML = `<span class="warn">${escapeHtml(error.message)}</span>`;
       }
     });
 
@@ -409,10 +512,12 @@ END:VCALENDAR`;
       statusEl.innerHTML = `<span class="ok">Downloaded .ics.</span>`;
     });
 
-    // initialize defaults and auto-generate
+    // initialize defaults and load saved bookings
     populateTimeOptions();
     setDefaultNowPlus(30);
-    generate();
+    fetchBookings().catch(() => {
+      statusEl.innerHTML = `<span class="warn">Could not load stored slots. Start the app through the local server.</span>`;
+    });
   </script>
 </body>
 </html>
