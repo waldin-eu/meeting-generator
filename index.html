@@ -22,7 +22,7 @@
 
         <label>
           Time (24h)
-          <input id="time" type="time" step="60" />
+          <select id="time"></select>
         </label>
 
         <label>
@@ -57,6 +57,7 @@
   <script>
     // ---- helpers ----
     const pad2 = (n) => String(n).padStart(2, "0");
+    const TIME_STEP_MINUTES = 15;
 
     function formatDDMMYYYY(dateObj) {
       const dd = pad2(dateObj.getDate());
@@ -99,15 +100,29 @@
       URL.revokeObjectURL(url);
     }
 
+    function populateTimeOptions(stepMinutes = TIME_STEP_MINUTES) {
+      const timeSelect = document.getElementById("time");
+      timeSelect.innerHTML = "";
+
+      for (let total = 0; total < 24 * 60; total += stepMinutes) {
+        const HH = pad2(Math.floor(total / 60));
+        const MM = pad2(total % 60);
+        const option = document.createElement("option");
+        option.value = `${HH}:${MM}`;
+        option.textContent = `${HH}:${MM}`;
+        timeSelect.appendChild(option);
+      }
+    }
+
     function setDefaultNowPlus(minutesAhead = 30) {
       const now = new Date();
       const rounded = new Date(now.getTime());
       rounded.setMinutes(rounded.getMinutes() + minutesAhead);
       rounded.setSeconds(0, 0);
 
-      // Round minutes to nearest 5 for convenience
+      // Round minutes to match dropdown increments.
       const m = rounded.getMinutes();
-      const roundedM = Math.ceil(m / 5) * 5;
+      const roundedM = Math.ceil(m / TIME_STEP_MINUTES) * TIME_STEP_MINUTES;
       rounded.setMinutes(roundedM);
 
       const yyyy = rounded.getFullYear();
@@ -226,6 +241,7 @@ END:VCALENDAR`;
     });
 
     // initialize defaults and auto-generate
+    populateTimeOptions();
     setDefaultNowPlus(30);
     generate();
   </script>
